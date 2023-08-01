@@ -162,3 +162,4 @@ cython_debug/
 .vscode/
 
 lastexecute.txt
+discord_bot.service

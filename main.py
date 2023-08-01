@@ -11,7 +11,6 @@ import asyncio
 from datetime import datetime, time as dt_time
 from time import strftime, localtime
 import time
-import requests
 import pathlib
 
 logger = settings.logging.getLogger("bot")
@@ -59,7 +58,7 @@ def run():
             time_now = int(time.time())
             target_time = dt_time(hour=16, minute=0, second=0)
             target_time_now = datetime.now().time()
-            if time_now >= int(timediff) + 604800 and target_time_now >= target_time:
+            if time_now >= int(timediff) + 604740 and target_time_now >= target_time:
                 channel = bot.get_channel(795428143107801098)
                 await channel.send("<@&847939354978811924>")
                 for item in titles['data']['Catalog']['searchStore']['elements']:
@@ -89,15 +88,18 @@ def run():
                     embed.set_author(name="Epic Games Store",
                                      icon_url="https://i.imgur.com/ANplrW5.png", url="https://store.epicgames.com/en-US/free-games")
                     if price == "0" and name != "PAYDAY 2":
-                        await channel.send(embed=embed)
-            f = open("lastexecute.txt", "w")
-            f.write(str(time_now))
-            f.close()
+                        messageembed = await channel.send(embed=embed)
+                        await messageembed.add_reaction("🔥")
+                        await messageembed.add_reaction("🗑️")
+                f = open("lastexecute.txt", "w")
+                f.write(str(time_now))
+                f.close()
             await asyncio.sleep(60)
 
     @bot.tree.command(name='epic', description="Current Free games on the Epic Games Store")
     async def epic(interaction):
         try:
+            await interaction.response.send_message("Here you go ;)", ephemeral=True)
             for item in titles['data']['Catalog']['searchStore']['elements']:
                 name = item['title']
                 price = item['price']['totalPrice']['fmtPrice']['discountPrice']
@@ -125,7 +127,9 @@ def run():
                 embed.set_author(name="Epic Games Store",
                                  icon_url="https://i.imgur.com/ANplrW5.png", url="https://store.epicgames.com/en-US/free-games")
                 if price == "0" and name != "PAYDAY 2":
-                    await interaction.channel.send(embed=embed)
+                    messageembed = await interaction.channel.send(embed=embed)
+                    await messageembed.add_reaction("🔥")
+                    await messageembed.add_reaction("🗑️")
 
         except Exception as e:
             print(e)
@@ -133,6 +137,7 @@ def run():
     @bot.tree.command(name='nextepic', description="Next Free games on the Epic Games Store")
     async def nextepic(interaction):
         try:
+            await interaction.response.send_message("Here you go ;)", ephemeral=True)
             for item in titles['data']['Catalog']['searchStore']['elements']:
                 name = item['title']
                 price = item['price']['totalPrice']['fmtPrice']['discountPrice']
@@ -159,20 +164,30 @@ def run():
                 embed.add_field(name=name, value="Currently: "+oldprice+" **SOON TO BE FREE**" +
                                 "\n Starts <t:"+count+":R> \n[Link to game]("+link+") ")
                 embed.set_image(url=image_url)
-                embed.set_footer(text="Bot by Her0")
+                embed.set_footer(
+                    text="Bot by Her0 - This comand is still a WIP")
                 embed.set_author(name="Epic Games Store",
                                  icon_url="https://i.imgur.com/ANplrW5.png", url="https://store.epicgames.com/en-US/free-games")
                 if int(count) >= int(time_now) and name != "PAYDAY 2" and discount == 0:
-                    await interaction.channel.send(embed=embed)
+                    await interaction.response(embed=embed)
+                else:
+                    None
 
         except Exception as e:
             print(e)
 
     @bot.tree.command(name='epicadmin', description="Announcement command for admins")
-    @commands.has_permissions(administrator=True)
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @app_commands.default_permissions(administrator=True)
     async def epicadmin(interaction, role: discord.Role):
         try:
-            await interaction.channel.send(role.mention)
+            await interaction.response.send_message("Here you go ;)", ephemeral=True)
+            if role.mention == "<@&794755529234579516>":
+                everyonemention = "@everyone"
+                await interaction.channel.send(everyonemention)
+            else:
+                await interaction.channel.send(role.mention)
+
             for item in titles['data']['Catalog']['searchStore']['elements']:
                 name = item['title']
                 price = item['price']['totalPrice']['fmtPrice']['discountPrice']
@@ -200,7 +215,9 @@ def run():
                 embed.set_author(name="Epic Games Store",
                                  icon_url="https://i.imgur.com/ANplrW5.png", url="https://store.epicgames.com/en-US/free-games")
                 if price == "0" and name != "PAYDAY 2":
-                    await interaction.channel.send(embed=embed)
+                    messageembed = await interaction.channel.send(embed=embed)
+                    await messageembed.add_reaction("🔥")
+                    await messageembed.add_reaction("🗑️")
 
         except Exception as e:
             print(e)
@@ -210,6 +227,13 @@ def run():
         await bot.process_commands(message)
 
     bot.run(settings.DISCORD_API_SECRET, root_logger=True)
+
+    @bot.event
+    async def on_application_command_error(interaction, error):
+        if isinstance(error, commands.CommandOnCooldown):
+            await interaction.response.send_message(error)
+        else:
+            raise error
 
 
 if __name__ == '__main__':
